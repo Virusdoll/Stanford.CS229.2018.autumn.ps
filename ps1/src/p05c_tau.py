@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import util
+from . import util
 
-from p05b_lwr import LocallyWeightedLinearRegression
+from .p05b_lwr import LocallyWeightedLinearRegression
 
 
 def main(tau_values, train_path, valid_path, test_path, pred_path):

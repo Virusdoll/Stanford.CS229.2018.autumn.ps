@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import util
+from . import util
 
-from linear_model import LinearModel
+from .linear_model import LinearModel
 
 
 def main(tau, train_path, eval_path):
@@ -45,6 +45,10 @@ class LocallyWeightedLinearRegression(LinearModel):
 
         """
         # *** START CODE HERE ***
+        
+        self.x = x
+        self.y = y
+        
         # *** END CODE HERE ***
 
     def predict(self, x):
@@ -57,4 +61,22 @@ class LocallyWeightedLinearRegression(LinearModel):
             Outputs of shape (m,).
         """
         # *** START CODE HERE ***
+        
+        def weight(x):
+            m, n = x.shape
+            # return shape(m, n, n)
+            # each shape(1, n, n) is W for single x
+            return np.apply_along_axis(np.diag, axis=1, arr=np.exp(
+                - np.linalg.norm(
+                    self.x - np.reshape(x, (m, -1, n)), axis=2
+                )**2 / (2 * self.tau**2)
+            ))
+        
+        def theta(w):
+            # return shape(m, n)
+            # each shape(1, n) is theta for single x
+            return np.linalg.inv(self.x.T @ w @ self.x) @ self.x.T @ w @ self.y
+        
+        return np.sum(x * theta(weight(x)), axis=1)
+        
         # *** END CODE HERE ***
