@@ -1,6 +1,6 @@
 # Important note: you do not have to modify this file for your homework.
 
-import util
+from . import util
 import numpy as np
 
 
