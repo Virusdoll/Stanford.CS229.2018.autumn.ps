@@ -2,8 +2,8 @@ import collections
 
 import numpy as np
 
-import util
-import svm
+from . import util
+from . import svm
 
 
 def get_words(message):
@@ -21,6 +21,9 @@ def get_words(message):
     """
 
     # *** START CODE HERE ***
+
+    return message.lower().split()
+
     # *** END CODE HERE ***
 
 
@@ -41,6 +44,25 @@ def create_dictionary(messages):
     """
 
     # *** START CODE HERE ***
+    
+    tmp_dictionary = {}
+    word_dictionary = {}
+
+    for message in messages:
+        word_count = collections.Counter(get_words(message))
+        for word, count in word_count.items():
+            if not word in tmp_dictionary:
+                tmp_dictionary[word] = 0
+            tmp_dictionary[word] += count
+
+    word_id = 0
+    for tmp_word, tmp_count in tmp_dictionary.items():
+        if tmp_count >= 5:
+            word_dictionary[tmp_word] = word_id
+            word_id += 1
+
+    return word_dictionary
+
     # *** END CODE HERE ***
 
 
@@ -62,6 +84,19 @@ def transform_text(messages, word_dictionary):
         A numpy array marking the words present in each message.
     """
     # *** START CODE HERE ***
+    
+    trans_matrix = np.zeros(
+        (len(messages), len(word_dictionary)), dtype=int
+    )
+
+    for trans_row, message in zip(trans_matrix, messages):
+        word_count = collections.Counter(get_words(message))
+        for word, count in word_count.items():
+            if word in word_dictionary:
+                trans_row[word_dictionary[word]] += count
+
+    return trans_matrix
+
     # *** END CODE HERE ***
 
 
@@ -82,6 +117,22 @@ def fit_naive_bayes_model(matrix, labels):
     """
 
     # *** START CODE HERE ***
+
+    _, n = matrix.shape
+
+    # p(y=1)
+    p_y1 = np.mean(labels)
+
+    # p(x_i | y=1)
+    p_xi_y1 = (labels @ matrix + 1) \
+              / (sum(labels @ matrix) + n)
+
+    # p(x_i | y=0)
+    p_xi_y0 = ((1 - labels) @ matrix + 1) \
+              / (sum((1 - labels) @ matrix) + n)
+
+    return (p_y1, p_xi_y1, p_xi_y0)
+
     # *** END CODE HERE ***
 
 
@@ -98,6 +149,21 @@ def predict_from_naive_bayes_model(model, matrix):
     Returns: A numpy array containg the predictions from the model
     """
     # *** START CODE HERE ***
+
+    # get p(y=1), p(x_i | y=1)
+    p_y1, p_xi_y1, p_xi_y0 = model
+
+    # p(x | y=1)
+    p_x_y1 = np.exp(matrix @ np.log(p_xi_y1))
+    # p(x | y=0)
+    p_x_y0 = np.exp(matrix @ np.log(p_xi_y0))
+    # p(y=1 | x)
+    p_y1_x = p_x_y1 * p_y1 / (p_x_y1 * p_y1 + p_x_y0 * (1-p_y1))
+
+    p_y1_x = np.where(p_y1_x > 0.5, 1, 0)
+
+    return p_y1_x
+
     # *** END CODE HERE ***
 
 
@@ -114,6 +180,21 @@ def get_top_five_naive_bayes_words(model, dictionary):
     Returns: The top five most indicative words in sorted order with the most indicative first
     """
     # *** START CODE HERE ***
+
+    # get p(y=1), p(x_i | y=1)
+    _, p_xi_y1, p_xi_y0 = model
+
+    # id of 5 most indicative words
+    # sorted by smaller to larger
+    word_ids = np.argsort(np.log(p_xi_y1) - np.log(p_xi_y0))[-5:]
+
+    vk_dict = {v: k for k, v in dictionary.items()}
+    words = []
+    for word_id in word_ids[::-1]:
+        words += [vk_dict[word_id]]
+
+    return words
+
     # *** END CODE HERE ***
 
 
@@ -134,6 +215,19 @@ def compute_best_svm_radius(train_matrix, train_labels, val_matrix, val_labels, 
         The best radius which maximizes SVM accuracy.
     """
     # *** START CODE HERE ***
+
+    best_acc = 0
+    best_radius = None
+    for radius in radius_to_consider:
+        acc = np.mean(svm.train_and_predict_svm(
+            train_matrix, train_labels, val_matrix, radius
+            ) == val_labels)
+        if acc > best_acc:
+            best_acc = acc
+            best_radius = radius
+
+    return best_radius
+
     # *** END CODE HERE ***
 
 
@@ -179,7 +273,7 @@ def main():
 
     svm_accuracy = np.mean(svm_predictions == test_labels)
 
-    print('The SVM model had an accuracy of {} on the testing set'.format(svm_accuracy, optimal_radius))
+    print('The SVM model had an accuracy of {} on the testing set'.format(svm_accuracy))
 
 
 if __name__ == "__main__":
