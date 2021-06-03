@@ -9,7 +9,7 @@ UNLABELED = -1  # Cluster label for unlabeled data points (do not change)
 
 
 def main(is_semi_supervised, trial_num):
-    """Problem 3: EM for Gaussian Mixture Models (unsupervised and semi-supervised)"""
+    """Problem 4: EM for Gaussian Mixture Models (unsupervised and semi-supervised)"""
     print('Running {} EM algorithm...'
           .format('semi-supervised' if is_semi_supervised else 'unsupervised'))
 
@@ -28,10 +28,26 @@ def main(is_semi_supervised, trial_num):
     # *** START CODE HERE ***
     # (1) Initialize mu and sigma by splitting the m data points uniformly at random
     # into K groups, then calculating the sample mean and covariance for each group
+    m, _ = x.shape
+    size = int(m / K)
+    idx = np.random.permutation(m)
+    mu = np.array([
+        1 / size
+        * sum(x[idx[size * j : size * (j+1)], : ])
+        for j in range(K)
+    ])
+    sigma = np.array([
+        1 / (size - 1) 
+        * (x[idx[size * j : size * (j+1)], :] - mu[j]).T 
+        @ (x[idx[size * j : size * (j+1)], :] - mu[j]) 
+        for j in range(K)
+    ])
     # (2) Initialize phi to place equal probability on each Gaussian
     # phi should be a numpy array of shape (K,)
+    phi = np.ones(K) / K
     # (3) Initialize the w values to place equal probability on each Gaussian
     # w should be a numpy array of shape (m, K)
+    w = np.ones((m, K)) / K
     # *** END CODE HERE ***
 
     if is_semi_supervised:
@@ -49,7 +65,7 @@ def main(is_semi_supervised, trial_num):
 
 
 def run_em(x, w, phi, mu, sigma):
-    """Problem 3(d): EM Algorithm (unsupervised).
+    """Problem 4(d): EM Algorithm (unsupervised).
 
     See inline comments for instructions.
 
@@ -77,18 +93,40 @@ def run_em(x, w, phi, mu, sigma):
         pass  # Just a placeholder for the starter code
         # *** START CODE HERE
         # (1) E-step: Update your estimates in w
+        m, _ = x.shape
+        w_tmp = np.array([
+            np.diagonal(
+                1 / (np.linalg.det(sigma[j])**(1 / 2))
+                * np.exp(- 1 / 2 * (x - mu[j]) @ np.linalg.inv(sigma[j]) @ (x - mu[j]).T)
+                * phi[j]
+            ) for j in range(K)
+        ]) # shape (K, m)
+        w = (w_tmp / sum(w_tmp)).T # shape (m, K)
+        
         # (2) M-step: Update the model parameters phi, mu, and sigma
+        mu_new = (x.T @ w  / sum(w)).T # shape (K, n)
+        phi_new = 1 / m * sum(w) # shape (K, )
+        sigma_new = np.array([
+            ((x - mu[j]).T * w.T[j]) @ (x - mu[j])
+            / sum(w.T[j])
+            for j in range(K)
+        ]) # shape (K, n, n)
+        mu, phi, sigma = mu_new, phi_new, sigma_new
+
         # (3) Compute the log-likelihood of the data to check for convergence.
         # By log-likelihood, we mean `ll = sum_x[log(sum_z[p(x|z) * p(z)])]`.
         # We define convergence by the first iteration where abs(ll - prev_ll) < eps.
         # Hint: For debugging, recall part (a). We showed that ll should be monotonically increasing.
+        prev_ll = ll
+        ll = np.sum(np.log(sum(w_tmp)))
+        it += 1
         # *** END CODE HERE ***
 
     return w
 
 
 def run_semi_supervised_em(x, x_tilde, z, w, phi, mu, sigma):
-    """Problem 3(e): Semi-Supervised EM Algorithm.
+    """Problem 4(e): Semi-Supervised EM Algorithm.
 
     See inline comments for instructions.
 
@@ -119,10 +157,47 @@ def run_semi_supervised_em(x, x_tilde, z, w, phi, mu, sigma):
         pass  # Just a placeholder for the starter code
         # *** START CODE HERE ***
         # (1) E-step: Update your estimates in w
+        m, _ = x.shape
+        w_tmp = np.array([
+            np.diagonal(
+                1 / (np.linalg.det(sigma[j])**(1 / 2))
+                * np.exp(- 1 / 2 * (x - mu[j]) @ np.linalg.inv(sigma[j]) @ (x - mu[j]).T)
+                * phi[j]
+            ) for j in range(K)
+        ]) # shape (K, m)
+        w = (w_tmp / sum(w_tmp)).T # shape (m, K)
+        
         # (2) M-step: Update the model parameters phi, mu, and sigma
+        z = z.flatten()
+        mu_new = np.array([
+            (w.T[j] @ x + alpha * (z == j) @ x_tilde)
+            / (sum(w.T[j]) + alpha * sum(z == j))
+            for j in range(K)
+        ]) # shape (K, n)
+
+        phi_new = np.array([
+            sum(w.T[j]) + alpha * sum(z == j)
+            for j in range(K)
+        ])
+        phi_new /= sum(phi_new) # shape (K, )
+        
+        sigma_new = np.array([
+            (((x - mu[j]).T * w.T[j]) @ (x - mu[j])
+            + alpha * ((x_tilde - mu[j]).T * (z == j))
+            @ (x_tilde - mu[j]))
+            / (sum(w.T[j]) + alpha * sum(z == j))
+            for j in range(K)
+        ]) # shape (K, n, n)
+        
+        mu, phi, sigma = mu_new, phi_new, sigma_new
+
         # (3) Compute the log-likelihood of the data to check for convergence.
         # Hint: Make sure to include alpha in your calculation of ll.
         # Hint: For debugging, recall part (a). We showed that ll should be monotonically increasing.
+        prev_ll = ll
+        ll = np.sum(np.log(sum(w_tmp)))
+        it += 1
+
         # *** END CODE HERE ***
 
     return w
@@ -151,13 +226,13 @@ def plot_gmm_preds(x, z, with_supervision, plot_id):
         alpha = 0.25 if z_ < 0 else 0.75
         plt.scatter(x_1, x_2, marker='.', c=color, alpha=alpha)
 
-    file_name = 'p03_pred{}_{}.pdf'.format('_ss' if with_supervision else '', plot_id)
+    file_name = 'p04_pred{}_{}.png'.format('_ss' if with_supervision else '', plot_id)
     save_path = os.path.join('output', file_name)
     plt.savefig(save_path)
 
 
 def load_gmm_dataset(csv_path):
-    """Load dataset for Gaussian Mixture Model (problem 3).
+    """Load dataset for Gaussian Mixture Model (problem 4).
 
     Args:
          csv_path: Path to CSV file containing dataset.
@@ -197,5 +272,5 @@ if __name__ == '__main__':
         # Once you've implemented the semi-supervised version,
         # uncomment the following line.
         # You do not need to add any other lines in this code block.
-        # main(with_supervision=True, trial_num=t)
+        main(is_semi_supervised=True, trial_num=t)
         # *** END CODE HERE ***
