@@ -41,6 +41,7 @@ def backward_softmax(x, grad_outputs):
     """
     
     # *** START CODE HERE ***
+    return forward_softmax(x) - (grad_outputs != 0).astype(int)
     # *** END CODE HERE ***
 
 def forward_relu(x):
@@ -71,6 +72,7 @@ def backward_relu(x, grad_outputs):
     """
 
     # *** START CODE HERE ***
+    return grad_outputs * (x > 0).astype(int)
     # *** END CODE HERE ***
 
 def get_initial_params():
@@ -155,6 +157,26 @@ def backward_convolution(conv_W, conv_b, data, output_grad):
     """
 
     # *** START CODE HERE ***
+    conv_channels, _, conv_width, conv_height = conv_W.shape
+    _, input_width, input_height = data.shape
+
+    grad_w = np.zeros(conv_W.shape)
+    grad_b = np.zeros(conv_b.shape)
+    grad_x = np.zeros(data.shape)
+
+    for x in range(input_width - conv_width + 1):
+        for y in range(input_height - conv_height + 1):
+            for output_channel in range(conv_channels):
+                output_grad_cxy = output_grad[output_channel, x, y]
+                if output_grad_cxy == 0:
+                    continue
+                
+                grid = data[:, x:(x + conv_width), y:(y + conv_height)]
+                grad_w[output_channel] += grid * output_grad_cxy
+                grad_b[output_channel] += output_grad_cxy
+                grad_x[:, x:(x + conv_width), y:(y + conv_height)] += conv_W[output_channel] * output_grad_cxy
+
+    return (grad_w, grad_b, grad_x)
     # *** END CODE HERE ***
 
 def forward_max_pool(data, pool_width, pool_height):
@@ -197,6 +219,19 @@ def backward_max_pool(data, pool_width, pool_height, output_grad):
     """
     
     # *** START CODE HERE ***
+    output_channels, output_width, output_height = output_grad.shape
+    grad_input = np.zeros(data.shape)
+
+    for x in range(output_width):
+        for y in range(output_height):
+            for channel in range(output_channels):
+                grid_x = x * pool_width
+                grid_y = y * pool_height
+                grid = data[channel, grid_x : grid_x + pool_width, grid_y : grid_y + pool_height]
+                max_x, max_y = np.unravel_index(np.argmax(grid), grid.shape)
+                grad_input[channel, grid_x + max_x, grid_y + max_y] = output_grad[channel, x, y]
+
+    return grad_input
     # *** END CODE HERE ***
 
 def forward_cross_entropy_loss(probabilities, labels):
@@ -234,6 +269,7 @@ def backward_cross_entropy_loss(probabilities, labels):
     """
 
     # *** START CODE HERE ***
+    return (- 1 / probabilities) * labels
     # *** END CODE HERE ***
 
 def forward_linear(weights, bias, data):
@@ -265,6 +301,11 @@ def backward_linear(weights, bias, data, output_grad):
     """
 
     # *** START CODE HERE ***
+    return (
+        data.reshape(data.shape[0], 1) @ output_grad.reshape(1, output_grad.shape[0]),
+        output_grad,
+        weights @ output_grad
+    )
     # *** END CODE HERE ***
 
 def forward_prop(data, labels, params):
@@ -324,6 +365,36 @@ def backward_prop(data, labels, params):
     """
 
     # *** START CODE HERE ***
+    W1 = params['W1']
+    b1 = params['b1']
+    W2 = params['W2']
+    b2 = params['b2']
+
+    # forward
+
+    first_convolution = forward_convolution(W1, b1, data)
+    first_max_pool = forward_max_pool(first_convolution, MAX_POOL_SIZE, MAX_POOL_SIZE)
+    first_after_relu = forward_relu(first_max_pool)
+    flattened = np.reshape(first_after_relu, (-1))
+    logits = forward_linear(W2, b2, flattened)
+    y_hat = forward_softmax(logits)
+
+    # backward
+    
+    grad_ce = backward_cross_entropy_loss(y_hat, labels)
+    grad_softmax = backward_softmax(logits, grad_ce)
+    grad_W2, grad_b2, grad_linear = backward_linear(W2, b2, flattened, grad_softmax)
+    unflattened = np.reshape(grad_linear, first_after_relu.shape)
+    grad_relu = backward_relu(first_max_pool, unflattened)
+    grad_max_pool = backward_max_pool(first_convolution, MAX_POOL_SIZE, MAX_POOL_SIZE, grad_relu)
+    grad_W1, grad_b1, _ = backward_convolution(W1, b1, data, grad_max_pool)
+
+    return {
+        'W1': grad_W1,
+        'b1': grad_b1,
+        'W2': grad_W2,
+        'b2': grad_b2
+    }
     # *** END CODE HERE ***
 
 def forward_prop_batch(batch_data, batch_labels, params, forward_prop_func):
@@ -407,7 +478,7 @@ def nn_train(
     return params, cost_dev, accuracy_dev
 
 def nn_test(data, labels, params):
-    output, cost = forward_pr(data, labels, params)
+    output, cost = forward_prop(data, labels, params)
     accuracy = compute_accuracy(output, labels)
     return accuracy
 
