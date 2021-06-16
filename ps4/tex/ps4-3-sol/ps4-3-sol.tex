@@ -1,0 +1,38 @@
+%!TEX program = xelatex
+\documentclass[11pt, a4paper]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\title{ps4-1-sol}
+\author{virusdoll}
+
+\begin{document}
+    \maketitle
+
+    Suppose the angle between $x^{(i)}$ and $u$ is $\theta$, then
+    \begin{align*}
+        \alpha | u | & = | x^{(i)} | \cos(\theta) \\
+        \alpha | u | & = \frac{|x^{(i)}| |u| \cos(\theta)}{|u|} \\
+        \alpha | u | & = \frac{x^{(i)} \cdot u}{|u|} \\
+        \alpha & = \frac{x^{(i)} \cdot u}{|u|^2} \\
+        \alpha & = x^{(i)} \cdot u \\
+        \alpha u & = (x^{(i)} \cdot u) u \\
+        v & = (x^{(i)} \cdot u) u
+    \end{align*}
+
+    So,
+    \begin{align*}
+        & \ \arg \min_{u:u^Tu=1} \sum^m_{i=1} \| x^{(i)} - f_u(x^{(i)}) \|^2_2 \\
+        = & \ \arg \min_{u:u^Tu=1} \sum^m_{i=1} \| x^{(i)} - (x^{(i)} \cdot u) u \|^2_2 \\
+        = & \ \arg \min_{u:u^Tu=1} \sum^m_{i=1}
+            (x^{(i)} - (x^{(i)} \cdot u)^T (x^{(i)} - (x^{(i)} \cdot u) \\
+        = & \ \arg \min_{u:u^Tu=1} \sum^m_{i=1}
+            (x^{(i)})^T x^{(i)} - 2 (x^{(i)} \cdot u) u^T x^{(i)} + (x^{(i)} \cdot u)^2 u^Tu \\
+        = & \ \arg \min_{u:u^Tu=1} \sum^m_{i=1}
+            (x^{(i)})^T x^{(i)} - 2 u^T x^{(i)} (x^{(i)})^T u + u^T x^{(i)} (x^{(i)})^T u I \\
+        = & \ \arg \max_{u:u^Tu=1} \sum^m_{i=1} u^T x^{(i)} (x^{(i)})^T u \\
+        = & \ \arg \max_{u:u^Tu=1} u^T ( \sum^m_{i=1} x^{(i)} (x^{(i)})^T ) u
+    \end{align*}
+\end{document}
