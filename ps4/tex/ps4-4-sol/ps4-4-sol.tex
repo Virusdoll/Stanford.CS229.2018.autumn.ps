@@ -1,0 +1,104 @@
+%!TEX program = xelatex
+\documentclass[11pt, a4paper]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\title{ps4-4-sol}
+\author{virusdoll}
+
+\begin{document}
+    \maketitle
+
+    % problem (a)
+    \section*{(a)}
+    
+    \begin{align*}
+        \ell(W)
+        & = \sum^m_{i=1} \big( \log |W| + \sum^d_{j=1} \log g' (w^T_j x^{(i)}) \big) \\
+        & = \sum^m_{i=1} \big(
+            \log |W|
+            + \sum^d_{j=1} \log (2 \pi)^{\frac{1}{2}} \exp (- \frac{1}{2} (w^T_j x^{(i)})^2)
+        \big) \\
+        & = \sum^m_{i=1} \big(
+            \log |W|
+            + \sum^d_{j=1} - \frac{1}{2} \log 2 \pi - \frac{1}{2} (w^T_j x^{(i)})^2
+        \big) \\
+        & = \sum^m_{i=1} \big(
+            \log |W|
+            - \frac{1}{2} d \log 2 \pi
+            - \frac{1}{2} {x^{(i)}}^T W^T W x^{(i)}
+        \big)
+    \end{align*}
+
+    \begin{align*}
+        \nabla_W \ell(W)
+        & = \nabla_W \sum^m_{i=1} \big(
+            \log |W|
+            - \frac{1}{2} d \log 2 \pi
+            - \frac{1}{2} {x^{(i)}}^T W^T W x^{(i)}
+        \big) \\
+        & = \sum^m_{i=1} \big(
+            W^{-T}
+            - \frac{1}{2} \nabla_W \ \text{tr} \ {x^{(i)}}^T W^T W x^{(i)}
+        \big) \\
+        & = \sum^m_{i=1} \big(
+            W^{-T}
+            - \frac{1}{2} \nabla_W \ \text{tr} \ W^T W x^{(i)} {x^{(i)}}^T
+        \big) \\
+        & = \sum^m_{i=1} \big( W^{-T} - W x^{(i)} {x^{(i)}}^T \big) \\
+        & = n W^{-T} - W X^T X
+    \end{align*}
+
+    Let $\nabla_W \ell(W) = 0$, then
+    \begin{align*}
+        n W^{-T} & = W X^T X \\
+        W^T W & = n (X^T X)^{-1}
+    \end{align*}
+
+    Let $R$ be an arbitrary orthogonal matrix, then
+    \begin{align*}
+        (RW)^T RW & = W^T R^T R W \\
+        & = W^T I W \\
+        & = W^T W \qquad \text{for any} \ R
+    \end{align*}
+
+    So the result of $W$ can be any of the $RW$.
+
+    % problem (b)
+    \section*{(b)}
+    
+    For $x^{(i)}$, we have
+    \begin{align*}
+        \nabla_W \ell(W)
+        & = \nabla_W \big( \log |W| + \sum^d_{j=1} \log g' (w^T_j x^{(i)}) \big) \\
+        & = \nabla_W \big(
+            \log |W| + \sum^d_{j=1} \log \frac{1}{2} \exp (-|w^T_j x^{(i)}|)
+        \big) \\
+        & = \nabla_W \big(
+            \log |W| + \sum^d_{j=1} \log \frac{1}{2} -|w^T_j x^{(i)}|
+        \big) \\
+        & = \nabla_W \big(
+            \log |W| + d \log \frac{1}{2} - \sum^d_{j=1} |w^T_j x^{(i)}|
+        \big) \\
+        & = W^{-T} - \nabla_W \sum^d_{j=1} |w^T_j x^{(i)}| \\
+        & = W^{-T} - \left[ \begin{array}{c}
+            \frac{\partial}{\partial w^T_1} |w^T_1 x^{(i)}| \\
+            \cdots \\
+            \frac{\partial}{\partial w^T_d} |w^T_d x^{(i)}| \\
+        \end{array}
+        \right] \\
+        & = W^{-T} - \left[ \begin{array}{c}
+            \text{sign}(w^T_1 x^{(i)}) {x^{(i)}}^T \\
+            \cdots \\
+            \text{sign}(w^T_d x^{(i)}) {x^{(i)}}^T \\
+        \end{array}
+        \right] \\
+        & = W^{-T} - \text{sign}(W^T x^{(i)}) {x^{(i)}}^T
+    \end{align*}
+
+    Then,
+    $$W := W + \alpha \big( W^{-T} - \text{sign}(W^T x^{(i)}) {x^{(i)}}^T \big)$$
+
+\end{document}
