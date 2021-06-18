@@ -1,0 +1,48 @@
+%!TEX program = xelatex
+\documentclass[11pt, a4paper]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\title{ps4-5-sol}
+\author{virusdoll}
+
+\begin{document}
+    \maketitle
+
+    % problem (a)
+    \section*{(a)}
+    
+    \begin{align*}
+        \| B(V_1) - B(V_2) \| _\infty
+        & = \| V'_1 - V'_2 \| _\infty \\
+        & = \max_{s \in S} | V'_1(s) - V'_2(s) | \\
+        & = \max_{s \in S} \Big|
+            \gamma \max_{a \in A} \sum_{s' \in S} P_{sa}(s') V_1(s')
+            - \gamma \max_{a \in A} \sum_{s' \in S} P_{sa}(s') V_2(s')
+        \Big| \\
+        & = \gamma \max_{s \in S} \Big|
+            \max_{a \in A} \sum_{s' \in S} P_{sa}(s') V_1(s')
+            - \max_{a \in A} \sum_{s' \in S} P_{sa}(s') V_2(s')
+        \Big| \\
+        & = \gamma \max_{s \in S} \Big|
+            \max_{a \in A} \sum_{s' \in S} P_{sa}(s') \big( V_1(s') - V_2(s') \big)
+        \Big| \\
+        & \le \gamma \max_{s \in S} | V_1(s) - V_2(s) |
+    \end{align*}
+
+    % problem (b)
+    \section*{(b)}
+    Let $V_1$ be a fixed point, then
+    $$\| V_1 - V'_2 \|_\infty \le \gamma \| V_1 - V_2 \|_\infty$$
+    \\
+    Finally, we have
+    \begin{align*}
+        \| V_1 - V_2 \|_\infty & = 0 \\
+        V_1 & = V_2
+    \end{align*}
+    \\
+    It means there is only one fixed point $V_1$.
+
+\end{document}
