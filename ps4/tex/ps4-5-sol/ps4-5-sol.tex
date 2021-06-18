@@ -15,7 +15,7 @@
     \section*{(a)}
     
     \begin{align*}
-        \| B(V_1) - B(V_2) \| _\infty
+        & \quad \ \| B(V_1) - B(V_2) \| _\infty \\
         & = \| V'_1 - V'_2 \| _\infty \\
         & = \max_{s \in S} | V'_1(s) - V'_2(s) | \\
         & = \max_{s \in S} \Big|
@@ -29,7 +29,8 @@
         & = \gamma \max_{s \in S} \Big|
             \max_{a \in A} \sum_{s' \in S} P_{sa}(s') \big( V_1(s') - V_2(s') \big)
         \Big| \\
-        & \le \gamma \max_{s \in S} | V_1(s) - V_2(s) |
+        & \le \gamma \max_{s \in S} | V_1(s) - V_2(s) | \\
+        & = \gamma \| V_1(s) - V_2(s) \|_\infty
     \end{align*}
 
     % problem (b)
